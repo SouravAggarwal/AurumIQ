@@ -23,3 +23,7 @@ yarn-debug.log*
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Notes Takeing files
+*info.txt
+*.env

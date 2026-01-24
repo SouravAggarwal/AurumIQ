@@ -37,7 +37,6 @@ import { tradesApi } from '../../services/api';
 
 // Default empty leg
 const getEmptyLeg = () => ({
-    name: '',
     ticker: '',
     is_open: true,
     entry_date: '',
@@ -52,6 +51,8 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
     const isEditing = Boolean(trade);
 
     // Form state
+    const [tradeName, setTradeName] = useState('');
+    const [description, setDescription] = useState('');
     const [legs, setLegs] = useState([getEmptyLeg()]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -59,21 +60,28 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
 
     // Initialize form with trade data when editing
     useEffect(() => {
-        if (trade && trade.legs) {
-            setLegs(
-                trade.legs.map((leg) => ({
-                    id: leg.id,
-                    name: leg.name || '',
-                    ticker: leg.ticker || '',
-                    is_open: leg.is_open ?? true,
-                    entry_date: leg.entry_date || '',
-                    exit_date: leg.exit_date || '',
-                    entry_price: leg.entry_price?.toString() || '',
-                    exit_price: leg.exit_price?.toString() || '',
-                    quantity: leg.quantity?.toString() || '',
-                }))
-            );
+        if (trade) {
+            setTradeName(trade.name || '');
+            setDescription(trade.description || '');
+            if (trade.legs) {
+                setLegs(
+                    trade.legs.map((leg) => ({
+                        id: leg.id,
+                        ticker: leg.ticker || '',
+                        is_open: leg.is_open ?? true,
+                        entry_date: leg.entry_date || '',
+                        exit_date: leg.exit_date || '',
+                        entry_price: leg.entry_price?.toString() || '',
+                        exit_price: leg.exit_price?.toString() || '',
+                        quantity: leg.quantity?.toString() || '',
+                    }))
+                );
+            } else {
+                setLegs([getEmptyLeg()]);
+            }
         } else {
+            setTradeName('');
+            setDescription('');
             setLegs([getEmptyLeg()]);
         }
         setError(null);
@@ -106,12 +114,7 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
 
     // Add new leg
     const handleAddLeg = () => {
-        // Copy name from first leg for consistency
-        const newLeg = getEmptyLeg();
-        if (legs.length > 0) {
-            newLeg.name = legs[0].name;
-        }
-        setLegs((prev) => [...prev, newLeg]);
+        setLegs((prev) => [...prev, getEmptyLeg()]);
     };
 
     // Remove leg
@@ -124,10 +127,11 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
     const validate = () => {
         const newErrors = {};
 
+        if (!tradeName.trim()) {
+            newErrors.tradeName = 'Trade Name is required';
+        }
+
         legs.forEach((leg, index) => {
-            if (!leg.name.trim()) {
-                newErrors[`${index}.name`] = 'Name is required';
-            }
             if (!leg.ticker.trim()) {
                 newErrors[`${index}.ticker`] = 'Ticker is required';
             }
@@ -166,7 +170,6 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
         try {
             const legsData = legs.map((leg) => ({
                 ...(leg.id && { id: leg.id }),
-                name: leg.name.trim(),
                 ticker: leg.ticker.toUpperCase().trim(),
                 is_open: leg.is_open,
                 entry_date: leg.entry_date,
@@ -176,11 +179,17 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
                 quantity: parseInt(leg.quantity),
             }));
 
+            const payload = {
+                name: tradeName.trim(),
+                description: description.trim(),
+                legs: legsData
+            };
+
             if (isEditing) {
-                await tradesApi.update(trade.trade_id, { legs: legsData });
+                await tradesApi.update(trade.trade_id, payload);
                 onSuccess('Trade updated successfully');
             } else {
-                await tradesApi.create({ legs: legsData });
+                await tradesApi.create(payload);
                 onSuccess('Trade created successfully');
             }
         } catch (err) {
@@ -218,6 +227,37 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
                     </Alert>
                 )}
 
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12}>
+                        <TextField
+                            label="Trade Name"
+                            value={tradeName}
+                            onChange={(e) => {
+                                setTradeName(e.target.value);
+                                if (errors.tradeName) {
+                                    setErrors(prev => ({ ...prev, tradeName: null }));
+                                }
+                            }}
+                            fullWidth
+                            required
+                            error={Boolean(errors.tradeName)}
+                            helperText={errors.tradeName}
+                            placeholder="e.g. Gold Mini Long Position"
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <TextField
+                            label="Description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            placeholder="Optional notes about this trade..."
+                        />
+                    </Grid>
+                </Grid>
+
                 {legs.map((leg, index) => (
                     <Paper
                         key={index}
@@ -250,18 +290,6 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
                         <Grid container spacing={2}>
                             <Grid item xs={12} sm={6}>
                                 <TextField
-                                    label="Trade Name"
-                                    value={leg.name}
-                                    onChange={(e) => handleLegChange(index, 'name', e.target.value)}
-                                    fullWidth
-                                    size="small"
-                                    error={Boolean(errors[`${index}.name`])}
-                                    helperText={errors[`${index}.name`]}
-                                    placeholder="e.g., Apple Long Position"
-                                />
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <TextField
                                     label="Ticker"
                                     value={leg.ticker}
                                     onChange={(e) => handleLegChange(index, 'ticker', e.target.value.toUpperCase())}
@@ -272,6 +300,7 @@ function TradeForm({ open, onClose, onSuccess, trade }) {
                                     placeholder="e.g., AAPL"
                                 />
                             </Grid>
+
 
                             <Grid item xs={12} sm={6}>
                                 <TextField

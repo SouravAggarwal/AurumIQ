@@ -36,6 +36,7 @@ import {
     Link,
     useTheme,
     alpha,
+    TextField,
 } from '@mui/material';
 import {
     ArrowBack as BackIcon,
@@ -43,6 +44,8 @@ import {
     Delete as DeleteIcon,
     TrendingUp as ProfitIcon,
     TrendingDown as LossIcon,
+    Save as SaveIcon,
+    Close as CloseIcon,
 } from '@mui/icons-material';
 import { tradesApi } from '../../services/api';
 import TradeForm from '../../components/TradeForm/TradeForm';
@@ -57,6 +60,8 @@ function TradeDetails() {
     const [livePrices, setLivePrices] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isEditingDescription, setIsEditingDescription] = useState(false);
+    const [descriptionDraft, setDescriptionDraft] = useState('');
 
     // Dialog state
     const [formOpen, setFormOpen] = useState(false);
@@ -166,6 +171,25 @@ function TradeDetails() {
             setTrade(data);
         } catch (err) {
             console.error('Failed to refresh trade:', err);
+        }
+    };
+
+    const handleSaveDescription = async () => {
+        try {
+            await tradesApi.update(tradeId, { description: descriptionDraft });
+            setTrade({ ...trade, description: descriptionDraft });
+            setIsEditingDescription(false);
+            setSnackbar({
+                open: true,
+                message: 'Notes updated successfully',
+                severity: 'success',
+            });
+        } catch (err) {
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to update notes',
+                severity: 'error',
+            });
         }
     };
 
@@ -502,6 +526,50 @@ function TradeDetails() {
                 onSuccess={handleFormSuccess}
                 trade={trade}
             />
+
+            {/* Description/Notes Card */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" fontWeight={600}>
+                            Notes
+                        </Typography>
+                        {!isEditingDescription ? (
+                            <IconButton onClick={() => {
+                                setDescriptionDraft(trade.description || '');
+                                setIsEditingDescription(true);
+                            }} size="small">
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        ) : (
+                            <Box>
+                                <IconButton onClick={() => setIsEditingDescription(false)} size="small" color="error">
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton onClick={handleSaveDescription} size="small" color="primary">
+                                    <SaveIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+                        )}
+                    </Box>
+
+                    {isEditingDescription ? (
+                        <TextField
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            variant="outlined"
+                            placeholder="Add notes about this trade..."
+                            value={descriptionDraft}
+                            onChange={(e) => setDescriptionDraft(e.target.value)}
+                        />
+                    ) : (
+                        <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {trade.description || 'No notes added.'}
+                        </Typography>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

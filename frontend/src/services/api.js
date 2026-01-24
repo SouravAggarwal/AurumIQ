@@ -116,4 +116,34 @@ export const analyticsApi = {
     },
 };
 
+/**
+ * Fyers API endpoints
+ */
+export const fyersApi = {
+    /**
+     * Get Fyers Auth URL
+     */
+    getAuthUrl: async () => {
+        const response = await api.get('/fyers/auth-url/');
+        return response.data;
+    },
+
+    /**
+     * Exchange auth code for token
+     * @param {string} authCode
+     */
+    generateToken: async (authCode) => {
+        const response = await api.post('/fyers/token/', { auth_code: authCode });
+        return response.data;
+    },
+
+    /**
+     * Get authenticated user's Fyers profile
+     */
+    getProfile: async () => {
+        const response = await api.get('/fyers/profile/');
+        return response.data;
+    },
+};
+
 export default api;

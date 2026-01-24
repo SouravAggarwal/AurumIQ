@@ -30,6 +30,7 @@ import {
     Analytics as AnalyticsIcon,
     TrendingUp as TradesIcon,
     ChevronLeft as ChevronLeftIcon,
+    Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 260;
@@ -185,6 +186,51 @@ function Layout({ children }) {
                         </ListItemButton>
                     );
                 })}
+            </List>
+
+            {/* Settings Item */}
+            <List sx={{ pt: 0 }}>
+                <ListItemButton
+                    onClick={() => handleNavigation('/settings')}
+                    selected={isActive('/settings')}
+                    sx={{
+                        mx: 1,
+                        mb: 0.5,
+                        borderRadius: 2,
+                        justifyContent: drawerOpen ? 'initial' : 'center',
+                        px: drawerOpen ? 2 : 1,
+                        minHeight: 48,
+                        ...(isActive('/settings') && {
+                            backgroundColor: 'primary.main',
+                            color: 'primary.contrastText',
+                            '&:hover': {
+                                backgroundColor: 'primary.dark',
+                            },
+                            '& .MuiListItemIcon-root': {
+                                color: 'inherit',
+                            },
+                        }),
+                    }}
+                >
+                    <ListItemIcon
+                        sx={{
+                            minWidth: drawerOpen ? 40 : 'auto',
+                            justifyContent: 'center',
+                            color: isActive('/settings') ? 'inherit' : 'text.secondary',
+                        }}
+                    >
+                        <SettingsIcon />
+                    </ListItemIcon>
+                    {drawerOpen && (
+                        <ListItemText
+                            primary="Settings"
+                            primaryTypographyProps={{
+                                fontWeight: isActive('/settings') ? 600 : 500,
+                                fontSize: '0.95rem',
+                            }}
+                        />
+                    )}
+                </ListItemButton>
             </List>
 
             {/* Footer */}

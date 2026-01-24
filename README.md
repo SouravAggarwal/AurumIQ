@@ -183,7 +183,7 @@ curl -X POST http://localhost:8000/api/trades/ \
   -d '{
     "legs": [
       {
-        "name": "Apple Long Position",
+        "name": "GoldM Long Position",
         "ticker": "AAPL",
         "is_open": true,
         "entry_date": "2025-01-15",
