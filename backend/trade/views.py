@@ -112,14 +112,6 @@ class TradeViewSet(viewsets.ViewSet):
         return Response(self._build_trade_response(trade), status=status.HTTP_201_CREATED)
 
     def getTradesByTradeId(self, request, trade_id=None):
-        """Get a specific trade by trade_id."""
-        trade = get_object_or_404(Trade, trade_id=trade_id)
-        response = self._build_trade_response(trade)
-
-        # Update Derived Fields from Fyers Quotes and Master Data
-        self._update_derived_fields(response)
-
-
         try:
             trade = get_object_or_404(Trade, trade_id=trade_id)
             response = self._build_trade_response(trade)

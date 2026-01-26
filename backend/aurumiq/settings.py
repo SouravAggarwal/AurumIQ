@@ -74,9 +74,9 @@ WSGI_APPLICATION = 'aurumiq.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 # Use SQLite for development (if USE_LOCAL_DB=True), PostgreSQL for production
+import dj_database_url
 
 USE_LOCAL_DB = os.getenv('USE_LOCAL_DB', 'False').lower() == 'true'
-
 if USE_LOCAL_DB:
     DATABASES = {
         'default': {
@@ -85,7 +85,6 @@ if USE_LOCAL_DB:
         }
     }
 else:
-    import dj_database_url
     DATABASES = {
         'default': dj_database_url.config(
             default=os.getenv('DATABASE_URL'),
