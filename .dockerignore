@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/venv
+**/env
+**/.env
+**/.venv
+
+# Frontend
+frontend/
+node_modules/
+dist/
+build/
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Logs
+*.log

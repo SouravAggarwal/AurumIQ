@@ -37,7 +37,9 @@ jobs:
         python manage.py check
 
     - name: Build Docker Image
-      run: docker build . --file Dockerfile --tag aurumiq-backend:$(date +%s)
+      run: |
+        cd ..
+        docker build . --file backend/Dockerfile --tag aurumiq-backend:$(date +%s)
 
   build-frontend:
     runs-on: ubuntu-latest
