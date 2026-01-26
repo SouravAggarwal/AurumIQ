@@ -3,6 +3,10 @@ djangorestframework>=3.15,<4.0
 django-cors-headers>=4.4,<5.0
 psycopg2-binary>=2.9,<3.0
 python-dotenv>=1.0,<2.0
-fyers-apiv3>=3.0,<4.0
+aiohttp
+aws_lambda_powertools
+requests
+websocket-client
 whitenoise==6.6.0
 dj-database-url>=2.1.0
+gunicorn
