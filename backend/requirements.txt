@@ -10,3 +10,4 @@ websocket-client
 whitenoise==6.6.0
 dj-database-url>=2.1.0
 gunicorn
+pandas
