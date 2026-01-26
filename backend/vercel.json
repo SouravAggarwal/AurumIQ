@@ -1,12 +1,22 @@
 {
-    "rewrites": [
+    "builds": [
         {
-            "source": "/static/(.*)",
-            "destination": "/static/$1"
+            "src": "aurumiq/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.9"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
         },
         {
-            "source": "/(.*)",
-            "destination": "aurumiq/wsgi.py"
+            "src": "/(.*)",
+            "dest": "aurumiq/wsgi.py"
         }
     ]
 }
