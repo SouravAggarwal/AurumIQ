@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 class FyersMasterClient:
