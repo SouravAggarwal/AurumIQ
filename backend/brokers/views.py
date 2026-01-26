@@ -4,7 +4,8 @@ API views for Client management (Fyers, etc).
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services.fyers_client import get_fyers_client
+from .fyers.fyers_client import get_fyers_client
+from .fyers.fyers_master_client import FyersMasterClient
 
 class FyersAuthURLView(APIView):
     def get(self, request):
@@ -35,3 +36,13 @@ class FyersProfileView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=400)
 
+
+class FyersUpdateMasterView(APIView):
+    """Update the Fyers master cache file."""
+    def post(self, request):
+        try:
+            master_client = FyersMasterClient()
+            master_client.update_fyers_master_cache_file()
+            return Response({'message': 'Master data updated successfully'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)

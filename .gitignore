@@ -27,3 +27,9 @@ yarn-debug.log*
 # Notes Takeing files
 *info.txt
 *.env
+
+*.log
+.log
+*.xlsx
+*cache.json
+cache.json

@@ -168,7 +168,7 @@ function Trades() {
             maximumFractionDigits: 2,
         });
         return {
-            text: value >= 0 ? `+$${formatted}` : `-$${formatted}`,
+            text: value >= 0 ? `+₹${formatted}` : `-₹${formatted}`,
             color: value >= 0 ? theme.palette.success.main : theme.palette.error.main,
         };
     };
@@ -176,10 +176,10 @@ function Trades() {
     // Format date
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
+        return new Date(dateStr).toLocaleDateString('en-GB', {
             day: 'numeric',
+            month: 'short',
+            year: 'numeric',
         });
     };
 

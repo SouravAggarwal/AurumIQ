@@ -57,7 +57,7 @@ function TradeDetails() {
 
     // State
     const [trade, setTrade] = useState(null);
-    const [livePrices, setLivePrices] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -101,28 +101,7 @@ function TradeDetails() {
         };
     }, [tradeId]);
 
-    // Live prices polling
-    useEffect(() => {
-        // Only poll if we have a trade with open legs
-        const shouldPoll = trade?.legs?.some(l => l.is_open);
 
-        if (!shouldPoll) return;
-
-        const fetchLivePrices = async () => {
-            try {
-                const pricesData = await tradesApi.getLivePrices();
-                setLivePrices(pricesData);
-            } catch (err) {
-                console.warn("Failed to fetch live prices", err);
-            }
-        };
-
-        // Initial fetch for live prices
-        fetchLivePrices();
-
-        const interval = setInterval(fetchLivePrices, 15000);
-        return () => clearInterval(interval);
-    }, [trade]); // Re-run when trade data loads/changes
 
     // Handlers
     const handleBack = () => {
@@ -145,7 +124,7 @@ function TradeDetails() {
                 message: 'Trade deleted successfully',
                 severity: 'success',
             });
-            setTimeout(() => navigate('/trades'), 1000);
+            setTimeout(() => navigate('/trades'), 10000);
         } catch (err) {
             setSnackbar({
                 open: true,
@@ -197,7 +176,7 @@ function TradeDetails() {
     const formatCurrency = (value) => {
         if (value === null || value === undefined) return '-';
         const num = parseFloat(value);
-        return `$${num.toLocaleString(undefined, {
+        return `₹${num.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         })}`;
@@ -210,7 +189,7 @@ function TradeDetails() {
             maximumFractionDigits: 2,
         });
         return {
-            text: num >= 0 ? `+$${formatted}` : `-$${formatted}`,
+            text: num >= 0 ? `+₹${formatted}` : `-₹${formatted}`,
             color: num >= 0 ? theme.palette.success.main : theme.palette.error.main,
             isProfit: num >= 0,
         };
@@ -218,37 +197,11 @@ function TradeDetails() {
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
+        return new Date(dateStr).toLocaleDateString('en-GB', {
             day: 'numeric',
-        });
+            month: 'short',
+        }).replace(' ', '-');
     };
-
-    // Calculate leg PnL
-    const calculateLegPnL = (leg) => {
-        if (!leg.is_open && leg.exit_price) {
-            return (parseFloat(leg.exit_price) - parseFloat(leg.entry_price)) * leg.quantity;
-        }
-
-        // Calculate unrealized PnL if open and we have live price
-        if (leg.is_open && livePrices && livePrices.prices && livePrices.prices[leg.ticker]) {
-            const currentPrice = livePrices.prices[leg.ticker].ltp;
-            return (currentPrice - parseFloat(leg.entry_price)) * leg.quantity;
-        }
-
-        return null;
-    };
-
-    // Calculate Total PnL (Realized + Unrealized)
-    const totalPnL = trade ? trade.legs.reduce((sum, leg) => {
-        const legPnL = calculateLegPnL(leg);
-        if (legPnL !== null) return sum + legPnL;
-        return sum;
-    }, 0) : 0;
-
-    // Use the calculated total PnL instead of just the stored realized PnL
-    const pnl = formatPnL(totalPnL);
 
     if (loading) {
         return (
@@ -290,6 +243,8 @@ function TradeDetails() {
         );
     }
 
+    // Format summary PnL (after trade is confirmed to exist)
+    const pnl = formatPnL(trade.pnl);
     const hasOpenLegs = trade.legs?.some((leg) => leg.is_open);
 
     return (
@@ -442,17 +397,24 @@ function TradeDetails() {
                                     <TableCell>Ticker</TableCell>
                                     <TableCell>Entry Date</TableCell>
                                     <TableCell>Exit Date</TableCell>
+                                    <TableCell>Expiry Date</TableCell>
                                     <TableCell align="right">Entry Price</TableCell>
-                                    <TableCell align="right">Current/Exit Price</TableCell>
+                                    <TableCell align="right">Exit Price</TableCell>
                                     <TableCell align="right">Quantity</TableCell>
+                                    <TableCell align="right">LTP</TableCell>
+                                    <TableCell align="right">Spread</TableCell>
+                                    <TableCell align="right">Change(%)</TableCell>
+                                    <TableCell align="right">Days Left</TableCell>
                                     <TableCell>Status</TableCell>
                                     <TableCell align="right">PnL</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {trade.legs?.map((leg, index) => {
-                                    const legPnL = calculateLegPnL(leg);
-                                    const legPnLFormatted = legPnL !== null ? formatPnL(legPnL) : null;
+                                    const legPnLFormatted = formatPnL(leg.pnl);
+
+                                    // Calculate Change % if available
+                                    let changePercent = leg.pnl_percentage;
 
                                     return (
                                         <TableRow key={leg.id || index}>
@@ -461,22 +423,12 @@ function TradeDetails() {
                                             </TableCell>
                                             <TableCell>{formatDate(leg.entry_date)}</TableCell>
                                             <TableCell>{formatDate(leg.exit_date)}</TableCell>
+                                            <TableCell>{formatDate(leg.expiry_date)}</TableCell>
                                             <TableCell align="right" sx={{ fontFeatureSettings: '"tnum"' }}>
                                                 {formatCurrency(leg.entry_price)}
                                             </TableCell>
                                             <TableCell align="right" sx={{ fontFeatureSettings: '"tnum"' }}>
-                                                {leg.is_open && livePrices?.prices?.[leg.ticker] ? (
-                                                    <Box>
-                                                        <Typography fontWeight={500}>
-                                                            {formatCurrency(livePrices.prices[leg.ticker].ltp)}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            Live
-                                                        </Typography>
-                                                    </Box>
-                                                ) : (
-                                                    formatCurrency(leg.exit_price)
-                                                )}
+                                                {leg.exit_price ? formatCurrency(leg.exit_price) : '-'}
                                             </TableCell>
                                             <TableCell align="right">
                                                 <Typography
@@ -487,6 +439,26 @@ function TradeDetails() {
                                                 >
                                                     {leg.quantity > 0 ? '+' : ''}{leg.quantity}
                                                 </Typography>
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontFeatureSettings: '"tnum"' }}>
+                                                {leg.ltp ? formatCurrency(leg.ltp) : '-'}
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontFeatureSettings: '"tnum"' }}>
+                                                {leg.spread ? formatCurrency(leg.spread) : '-'}
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontFeatureSettings: '"tnum"' }}>
+                                                {changePercent !== null ? (
+                                                    <Typography
+                                                        sx={{
+                                                            color: changePercent >= 0 ? 'success.main' : 'error.main',
+                                                        }}
+                                                    >
+                                                        {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                                                    </Typography>
+                                                ) : '-'}
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                {leg.days_left_for_expiry || '-'}
                                             </TableCell>
                                             <TableCell>
                                                 <Chip

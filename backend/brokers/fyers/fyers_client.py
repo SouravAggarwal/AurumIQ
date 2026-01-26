@@ -5,7 +5,7 @@ Provides functionality to fetch live market prices from Fyers API.
 Handles OAuth2 authentication flow and token management using a local cache file.
 
 Usage:
-    from brokers.services.fyers_client import FyersClient
+    from brokers.fyers.fyers_client import FyersClient
     
     client = FyersClient()
     # Check if connected
@@ -172,6 +172,9 @@ class FyersClient:
     def get_quotes(self, symbols: List[str]) -> Dict[str, Any]:
         """
         Fetch live quotes for the given symbols.
+        Returns:
+            Dict containing quotes data for the given symbols.
+            {'MCX:GOLDM26MARFUT': {'ltp': 161150, 'open': 160952, 'high': 163435, 'low': 159556, 'close': 161179, 'volume': 55636, 'change': 992, 'change_percent': 0.62, 'bid': 0, 'ask': 0, 'spread': 69, 'status': '', 'atp': 161659.17, 'description': 'MCX:GOLDM26MARFUT'}, 'MCX:GOLDM26FEBFUT': {'ltp': 156599, 'open': 158143, 'high': 159527, 'low': 155631, 'close': 156672, 'volume': 119586, 'change': 66, 'change_percent': 0.04, 'bid': 0, 'ask': 0, 'spread': 93, 'status': '', 'atp': 157563.71, 'description': 'MCX:GOLDM26FEBFUT'}}
         """
         if not symbols:
             return {}
@@ -201,17 +204,20 @@ class FyersClient:
                 symbol = v.get('symbol', '')
                 
                 quotes[symbol] = {
-                    'ltp': v.get('lp', 0),
+                    'ltp': v.get('lp', 0), # Last traded price
                     'open': v.get('open_price', 0),
                     'high': v.get('high_price', 0),
                     'low': v.get('low_price', 0),
                     'close': v.get('prev_close_price', 0),
-                    'volume': v.get('volume', 0),
-                    'change': v.get('ch', 0),
-                    'change_percent': v.get('chp', 0),
-                    'bid': v.get('bid', 0),
-                    'ask': v.get('ask', 0),
-                    'spread': v.get('spread', 0),
+                    'volume': v.get('volume', 0), # Volume traded
+                    'change': v.get('ch', 0), # Change in price
+                    'change_percent': v.get('chp', 0), # Percentage of change between the current value and the previous day's market close
+                    'bid': v.get('bid', 0), # Bidding price for the symbol
+                    'ask': v.get('ask', 0), # Asking price for the symbol
+                    'spread': v.get('spread', 0), # Difference between lowest asking and highest bidding price
+                    'status': v.get('status', ''), # ok / error
+                    'atp': v.get('atp', 0), # Average Traded Price
+                    'description': v.get('description', 0), # Symbol Description
                 }
             
             return quotes

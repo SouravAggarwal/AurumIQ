@@ -10,7 +10,7 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api',
-    timeout: 10000,
+    timeout: 100000,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -92,15 +92,7 @@ export const tradesApi = {
     delete: async (tradeId) => {
         const response = await api.delete(`/trades/${tradeId}/`);
         return response.data;
-    },
-
-    /**
-     * Get live prices and PnL for open positions
-     */
-    getLivePrices: async () => {
-        const response = await api.get('/trades/live-prices/');
-        return response.data;
-    },
+    }
 };
 
 /**
@@ -142,6 +134,14 @@ export const fyersApi = {
      */
     getProfile: async () => {
         const response = await api.get('/fyers/profile/');
+        return response.data;
+    },
+
+    /**
+     * Update Fyers master data cache file
+     */
+    updateMasterData: async () => {
+        const response = await api.post('/fyers/update-master/');
         return response.data;
     },
 };

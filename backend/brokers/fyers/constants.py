@@ -1,0 +1,23 @@
+FYERS_MASTER_FILE_COLUMNS = [
+    "fytoken",
+    "symbol_details",
+    "exchange_instrument_type",
+    "min_lot_size",
+    "tick_size",
+    "isin",
+    "trading_session",
+    "last_update_date",
+    "expiry_epoch",
+    "exchange_symbol",
+    "exchange",
+    "segment",
+    "scrip_code",
+    "underlying_symbol",
+    "underlying_scrip_code",
+    "strike_price",
+    "option_type",
+    "underlying_fytoken",
+    "expiry_epoch_dup",
+    "reserved_1",
+    "reserved_2"
+]

@@ -202,14 +202,12 @@ function Analysis() {
     // Format currency
     const formatCurrency = (value) => {
         const num = parseFloat(value || 0);
-        const prefix = num >= 0 ? '+$' : '-$';
+        const prefix = num >= 0 ? '+₹' : '-₹';
         return prefix + Math.abs(num).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         });
     };
-
-    const [liveData, setLiveData] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -217,18 +215,8 @@ function Analysis() {
                 setLoading(true);
                 setError(null);
 
-                // Fetch both analytics and live prices in parallel
-                const [analyticsData, livePricesData] = await Promise.all([
-                    analyticsApi.getSummary(),
-                    tradesApi.getLivePrices().catch(err => {
-                        console.warn('Failed to fetch live prices:', err);
-                        return null;
-                    })
-                ]);
-
+                const analyticsData = await analyticsApi.getSummary();
                 setAnalytics(analyticsData);
-                setLiveData(livePricesData);
-
             } catch (err) {
                 setError(err.message || 'Failed to load dashboard data');
             } finally {
@@ -237,24 +225,10 @@ function Analysis() {
         };
 
         loadData();
-
-        // Refresh live prices every 60 seconds
-        const interval = setInterval(async () => {
-            try {
-                const data = await tradesApi.getLivePrices();
-                setLiveData(data);
-            } catch (err) {
-                console.error("Live price refresh failed", err);
-            }
-        }, 60000);
-
-        return () => clearInterval(interval);
     }, []);
 
-    // Calculate total values including live unrealized PnL
-    const totalOpenTradesPnL = liveData
-        ? parseFloat(liveData.total_unrealized_pnl || 0) + parseFloat(analytics?.open_trades_pnl || 0)
-        : parseFloat(analytics?.open_trades_pnl || 0);
+    // Calculate total values
+    const totalOpenTradesPnL = parseFloat(analytics?.open_trades_pnl || 0);
 
     // Prepare pie chart data
     const pieData = analytics ? [
@@ -288,17 +262,7 @@ function Analysis() {
             )}
 
             {/* Live Data Status */}
-            {liveData && !liveData.fyers_configured && (
-                <Alert severity="warning" sx={{ mb: 3 }}>
-                    Live pricing unavailable: Fyers API not configured. Showing cached values.
-                </Alert>
-            )}
 
-            {liveData && liveData.fyers_error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    Live price error: {liveData.fyers_error}
-                </Alert>
-            )}
 
             {/* Summary Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -372,9 +336,7 @@ function Analysis() {
                         <StatCard
                             title="Open Trades PnL"
                             value={formatCurrency(totalOpenTradesPnL)}
-                            subtitle={liveData?.fyers_configured
-                                ? "Includes live unrealized PnL"
-                                : "Realized PnL from open trade legs"}
+                            subtitle="Realized PnL from open trade legs"
                             icon={TrendingUpIcon}
                             color={
                                 totalOpenTradesPnL >= 0

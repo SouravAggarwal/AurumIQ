@@ -20,6 +20,7 @@ import {
     CheckCircle as CheckCircleIcon,
     Person as PersonIcon,
     Refresh as RefreshIcon,
+    Storage as StorageIcon,
 } from '@mui/icons-material';
 import { fyersApi } from '../../services/api';
 
@@ -34,6 +35,10 @@ function Settings() {
     const [profile, setProfile] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true);
     const [profileError, setProfileError] = useState('');
+
+    // Master data update state
+    const [masterLoading, setMasterLoading] = useState(false);
+    const [masterSuccess, setMasterSuccess] = useState('');
 
     // Fetch profile on component mount
     useEffect(() => {
@@ -84,11 +89,27 @@ function Settings() {
             // Refresh profile after successful connection
             fetchProfile();
             // Clear success message after 3 seconds
-            setTimeout(() => setSuccess(''), 5000);
+            setTimeout(() => setSuccess(''), 50000);
         } catch (err) {
             setError(err.message || 'Failed to save token');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateMasterData = async () => {
+        setMasterLoading(true);
+        setError('');
+        setMasterSuccess('');
+        try {
+            const data = await fyersApi.updateMasterData();
+            setMasterSuccess(data.message || 'Master data updated successfully');
+            // Clear success message after 5 seconds
+            setTimeout(() => setMasterSuccess(''), 50000);
+        } catch (err) {
+            setError(err.message || 'Failed to update master data');
+        } finally {
+            setMasterLoading(false);
         }
     };
 
@@ -246,6 +267,34 @@ function Settings() {
                                     No profile data. Please connect your Fyers account first.
                                 </Alert>
                             )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Step 4: Update Master Data */}
+                    <Card variant="outlined" sx={{ bgcolor: 'background.default' }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <StorageIcon color="primary" />
+                                <Typography variant="subtitle2" fontWeight="bold">
+                                    Step 4: Update Master Data
+                                </Typography>
+                            </Box>
+                            <Typography variant="caption" display="block" color="text.secondary" paragraph>
+                                Update the MCX contract master data cache file. This fetches the latest contract details from Fyers.
+                            </Typography>
+                            {masterSuccess && (
+                                <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMasterSuccess('')}>
+                                    {masterSuccess}
+                                </Alert>
+                            )}
+                            <Button
+                                variant="outlined"
+                                startIcon={masterLoading ? <CircularProgress size={20} /> : <RefreshIcon />}
+                                onClick={handleUpdateMasterData}
+                                disabled={masterLoading}
+                            >
+                                {masterLoading ? 'Updating...' : 'Update Master Data'}
+                            </Button>
                         </CardContent>
                     </Card>
                 </Box>
