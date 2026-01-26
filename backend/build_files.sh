@@ -1,7 +1,12 @@
 # build_files.sh
-pip install -r requirements.txt
+# Ensure pip is installed/upgraded
+python3.9 -m pip install --upgrade pip
 
-# make migrations
-python3.9 manage.py migrate
+# Install dependencies
+python3.9 -m pip install -r requirements.txt
 
+# Run migrations (optional during build, often better in entrypoint or manual, but safe for now if DB allows)
+# python3.9 manage.py migrate --noinput
+
+# Collect static files
 python3.9 manage.py collectstatic --noinput --clear
