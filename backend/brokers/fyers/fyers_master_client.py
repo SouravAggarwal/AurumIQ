@@ -1,16 +1,16 @@
 import os
 import pandas as pd
 from typing import List, Dict, Optional
+from django.db import transaction
 
 
 class FyersMasterClient:
     """
     Manages Fyers MCX contract master using
-    a local Excel cache as the source of truth.
+    the database as the source of truth.
     """
 
     MCX_CONTRACT_MASTER_URL = "https://public.fyers.in/sym_details/MCX_COM.csv"
-    MCX_CONTRACT_MASTER_FILE = "mcx_fyers_master.xlsx"
     
     COLUMNS = [
         "fytoken",
@@ -36,20 +36,17 @@ class FyersMasterClient:
         "reserved_2",
     ]
 
-    def __init__(self):
-        self._cache_file = self.MCX_CONTRACT_MASTER_FILE
-
     # ==================================================
     # Public APIs
     # ==================================================
 
     def update_fyers_master_cache_file(self) -> None:
         """
-        Refreshes the entire master file:
+        Refreshes the entire master data in the database.
         """
-        if os.path.exists(self._cache_file):
-            os.remove(self._cache_file)
+        from brokers.models import FyersMasterData
 
+        # Fetch CSV
         df = pd.read_csv(
             self.MCX_CONTRACT_MASTER_URL,
             header=None,
@@ -57,27 +54,57 @@ class FyersMasterClient:
             dtype=str,
         )
 
+        # Filter for relevant MCX instruments
         filtered_df = df[
-            (df["underlying_symbol"].str.lower().isin(['silverm', 'goldm'])) &
-            (df["symbol_details"].str.contains("fut", case=False, na=False))
+            (df["underlying_symbol"].str.lower().isin(['silverm', 'goldm']))
         ]
-        filtered_df.to_excel(self._cache_file, index=False)
+
+        # Use a transaction for atomic update
+        with transaction.atomic():
+            # Clear existing data
+            FyersMasterData.objects.all().delete()
+            
+            # Prepare records for bulk create
+            records = []
+            for _, row in filtered_df.iterrows():
+                # Convert row to dict for raw_data storage and clean NaNs for JSON compatibility
+                row_dict = {k: (None if pd.isna(v) else v) for k, v in row.items()}
+                
+                # Parse numeric fields safely
+                try:
+                    expiry_epoch = int(row.get('expiry_epoch', 0))
+                except (ValueError, TypeError):
+                    expiry_epoch = 0
+
+                records.append(FyersMasterData(
+                    exchange_symbol=row.get('exchange_symbol'),
+                    underlying_symbol=row.get('underlying_symbol'),
+                    expiry_epoch=expiry_epoch,
+                    expiry_epoch_dup=row.get('expiry_epoch_dup'),
+                    symbol_details=row.get('symbol_details'),
+                    raw_data=row_dict
+                ))
+
+            
+            # Bulk create records
+            FyersMasterData.objects.bulk_create(records)
 
     def get_symbol_master_details(self, symbols: List[str]) -> Dict[str, dict]:
         """
         Exact match on exchange_symbol.
-        Reads only from cache.
+        Reads only from database.
         """
-        df = self._load_cache()
+        from brokers.models import FyersMasterData
         result: Dict[str, dict] = {}
 
         for symbol in symbols:
-            symbol_df = df[
-                (df["exchange_symbol"].str.lower() == symbol.lower())
-            ]
+            # Case insensitive match
+            active_record = FyersMasterData.objects.filter(
+                exchange_symbol__iexact=symbol
+            ).first()
 
-            if not symbol_df.empty:
-                result[symbol] = self._select_active_future(symbol_df) 
+            if active_record:
+                result[symbol] = active_record.raw_data
             else:
                 result[symbol] = {}
 
@@ -88,43 +115,38 @@ class FyersMasterClient:
     ) -> dict:
         """
         Exact match on underlying_symbol.
-        Only FUT contracts.
-        Reads only from cache.
+        Only FUT contracts (already filtered during update).
+        Reads only from database.
         """
-        df = self._load_cache()
+        from brokers.models import FyersMasterData
 
-        filtered_df = df[
-            (df["underlying_symbol"].str.lower() == underlying_symbol.lower()) &
-            (df["symbol_details"].str.contains("fut", case=False, na=False))
-        ]
+        queryset = FyersMasterData.objects.filter(
+            underlying_symbol__iexact=underlying_symbol
+        ).order_by('expiry_epoch')
 
-        return self._select_active_future(filtered_df)
+        active_record = queryset.first()
+        return active_record.raw_data if active_record else {}
 
     # ==================================================
-    # Internal Helpers
+    # Internal Helpers (Maintained for logic, but modified to use DB)
     # ==================================================
 
     def _load_cache(self) -> pd.DataFrame:
-        if not os.path.exists(self._cache_file):
+        """
+        Maintained for backward compatibility, but now loads from DB.
+        Prefer direct DB queries via public APIs.
+        """
+        from brokers.models import FyersMasterData
+        records = FyersMasterData.objects.all()
+        if not records.exists():
             raise FileNotFoundError(
-                "Fyers master cache file not found. "
+                "Fyers master data not found in database. "
                 "Call update_fyers_master_cache_file() first."
             )
-
-        return pd.read_excel(self._cache_file, dtype=str)
-
-    def _select_active_future(self, df: pd.DataFrame) -> dict:
-        """
-        Selects nearest expiry contract.
-        """
-        if df.empty:
-            return {}
-
-        df = df.copy()
-        df["expiry_epoch"] = pd.to_numeric(df["expiry_epoch"], errors="coerce")
-
-        active_row = df.sort_values("expiry_epoch").iloc[0]
-        return active_row.to_dict()
+        
+        # Build DataFrame from raw_data JSON
+        data_list = [r.raw_data for r in records]
+        return pd.DataFrame(data_list)
 
 # Singleton instance
 _fyers_master_client: Optional[FyersMasterClient] = None
@@ -134,3 +156,4 @@ def get_fyers_master_client() -> FyersMasterClient:
     if _fyers_master_client is None:
         _fyers_master_client = FyersMasterClient()
     return _fyers_master_client
+

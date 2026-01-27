@@ -51,7 +51,6 @@ class TradeCreateSerializer(serializers.ModelSerializer):
             
         return trade
 
-
 class TradeUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating a Trade and its legs."""
     legs = serializers.ListField(child=serializers.DictField(), min_length=1)

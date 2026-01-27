@@ -23,7 +23,8 @@ from urllib.parse import urlparse, parse_qs
 from django.conf import settings
 from pathlib import Path
 from fyers_apiv3 import fyersModel
-from common import cache_helper
+from common import constants as CommonConstants
+from common.services.config_helper import ConfigurationHelper
 
 logger = logging.getLogger(__name__)
 
@@ -249,27 +250,23 @@ class FyersClient:
                 self._fyers_model = fyersModel.FyersModel(
                     client_id=self.client_id,
                     token=token,
-                    log_path=""
+                    log_path="/tmp"
                 )
+
             except Exception as e:
                 raise FyersClientError(f"Error initializing FyersModel: {e}")
                 
         return self._fyers_model
 
     def _get_access_token(self) -> Optional[str]:
-        """Retrieve access token using cache_helper."""
-        try:
-            return cache_helper.get(self.CACHE_KEY_ACCESS_TOKEN)
-        except Exception as e:
-            logger.error(f"Error reading token from cache: {e}")
-        return None
+        """Retrieve access token from Database using ConfigHelper."""
+        return ConfigurationHelper.get(CommonConstants.ConfigurationTableKeys.FYERS_AUTH_TOKEN)
     
     def _save_access_token(self, token: str):
-        """Save access token using cache_helper."""
-        try:
-            cache_helper.set(self.CACHE_KEY_ACCESS_TOKEN, token)
-        except Exception as e:
-            logger.error(f"Error saving token to cache: {e}")
+        """Save access token to Database using ConfigHelper."""
+        ConfigurationHelper.set(CommonConstants.ConfigurationTableKeys.FYERS_AUTH_TOKEN, token)
+
+
         
 
 # Singleton instance

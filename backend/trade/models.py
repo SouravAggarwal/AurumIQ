@@ -18,7 +18,7 @@ class Trade(models.Model):
         help_text="Identifier to group legs of the same trade"
     )
     name = models.CharField(
-        max_length=100,
+        max_length=200,
         validators=[MinLengthValidator(1)],
         help_text="Trade name or description"
     )
@@ -53,7 +53,7 @@ class TradeLeg(models.Model):
         help_text="Foreign key to the parent trade"
     )
     ticker = models.CharField(
-        max_length=20,
+        max_length=100,
         help_text="Stock or instrument ticker symbol"
     )
     entry_date = models.DateField(
@@ -65,12 +65,12 @@ class TradeLeg(models.Model):
         help_text="Date when the position was exited (null if still open)"
     )
     entry_price = models.DecimalField(
-        max_digits=12,
+        max_digits=10,
         decimal_places=2,
         help_text="Price at which the position was entered"
     )
     exit_price = models.DecimalField(
-        max_digits=12,
+        max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,

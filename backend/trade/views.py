@@ -150,14 +150,16 @@ class TradeViewSet(viewsets.ViewSet):
     def _update_pnl_for_closed_legs(self, results):
         # Calculate PnL for Closed Legs
         for trade in results:
-            trade_pnl = 0
+            trade_pnl = Decimal('0')
             for leg in trade['legs']:
                 if (leg['is_open'] == False 
-                and leg['exit_price'] > 0
-                and leg['entry_price'] > 0
+                and leg['exit_price'] 
+                and leg['entry_price'] 
                 and leg['quantity'] is not None):
-                    trade_pnl += (leg['exit_price'] - leg['entry_price']) * leg['quantity']
-            trade['pnl'] = trade_pnl
+                    exit_price = Decimal(str(leg['exit_price'])) if not isinstance(leg['exit_price'], Decimal) else leg['exit_price']
+                    entry_price = Decimal(str(leg['entry_price'])) if not isinstance(leg['entry_price'], Decimal) else leg['entry_price']
+                    trade_pnl += (exit_price - entry_price) * leg['quantity']
+            trade['pnl'] = float(trade_pnl)
         return results
 
     def _update_derived_fields(self, response):
@@ -182,14 +184,25 @@ class TradeViewSet(viewsets.ViewSet):
                 leg['ltp'] = live_quotes[leg['ticker']].get('ltp')
                 leg['spread'] = live_quotes[leg['ticker']].get('spread')
 
-            # Calculate PnL for Legs
-            if (leg['entry_price'] > 0 and leg['quantity'] is not None):
+            # Calculate PnL for Legs - Convert all to Decimal for consistent arithmetic
+            if (leg['entry_price'] and leg['quantity'] is not None):
+                entry_price = Decimal(str(leg['entry_price'])) if not isinstance(leg['entry_price'], Decimal) else leg['entry_price']
+                
                 if (leg['is_open'] and leg['ltp'] is not None and leg['ltp'] > 0):
-                    leg['pnl'] = (leg['ltp'] - leg['entry_price']) * leg['quantity']
-                    leg['pnl_percentage'] = ((leg['ltp'] - leg['entry_price']) / leg['entry_price']) * 100 * leg['quantity']
+                    ltp = Decimal(str(leg['ltp']))
+                    leg['pnl'] = float((ltp - entry_price) * leg['quantity'] * self._get_multiplier(leg['ticker']))
+                    leg['pnl_percentage'] = float(((ltp - entry_price) / entry_price) * 100)
                 elif (not leg['is_open'] and leg['exit_price'] is not None and leg['exit_price'] > 0):
-                    leg['pnl'] = (leg['exit_price'] - leg['entry_price']) * leg['quantity']
-                    leg['pnl_percentage'] = ((leg['exit_price'] - leg['entry_price']) / leg['entry_price']) * 100 * leg['quantity']
+                    exit_price = Decimal(str(leg['exit_price'])) if not isinstance(leg['exit_price'], Decimal) else leg['exit_price']
+                    leg['pnl'] = float((exit_price - entry_price) * leg['quantity'] * self._get_multiplier(leg['ticker']))
+                    leg['pnl_percentage'] = float(((exit_price - entry_price) / entry_price) * 100)
 
         response['pnl'] = sum([leg['pnl'] for leg in response['legs'] if leg['pnl'] is not None])
         return response
+
+    def _get_multiplier(self, ticker):
+        if ticker.startswith('MCX:') and 'GOLDM' in ticker:
+            return 10
+        elif ticker.startswith('MCX:') and 'SILVERM' in ticker:
+            return 5
+        return 1
