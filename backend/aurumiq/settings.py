@@ -140,6 +140,7 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
+    'https://aurumiq.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000'
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
