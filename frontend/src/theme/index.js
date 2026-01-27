@@ -313,9 +313,13 @@ const theme = createTheme({
                     margin: '2px 8px',
                     transition: 'all 0.15s ease',
                     '&.Mui-selected': {
-                        backgroundColor: alpha(colors.primary.main, 0.08),
+                        backgroundColor: alpha(colors.primary.main, 0.15),
+                        color: colors.primary.main,
                         '&:hover': {
-                            backgroundColor: alpha(colors.primary.main, 0.12),
+                            backgroundColor: alpha(colors.primary.main, 0.22),
+                        },
+                        '& .MuiListItemIcon-root': {
+                            color: colors.primary.main,
                         },
                     },
                     '&:hover': {

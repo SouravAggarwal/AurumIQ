@@ -9,6 +9,8 @@ import Layout from './components/Layout/Layout';
 import Analysis from './pages/Analysis/Analysis';
 import Trades from './pages/Trades/Trades';
 import TradeDetails from './pages/TradeDetails/TradeDetails';
+import Snapshots from './pages/Snapshots/Snapshots';
+import SnapshotDetails from './pages/SnapshotDetails/SnapshotDetails';
 import Settings from './pages/Settings/Settings';
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
                 <Route path="/analysis" element={<Analysis />} />
                 <Route path="/trades" element={<Trades />} />
                 <Route path="/trades/:tradeId" element={<TradeDetails />} />
+                <Route path="/snapshots" element={<Snapshots />} />
+                <Route path="/snapshots/:snapshotId" element={<SnapshotDetails />} />
                 <Route path="/settings" element={<Settings />} />
             </Routes>
         </Layout>

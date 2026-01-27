@@ -146,4 +146,58 @@ export const fyersApi = {
     },
 };
 
+/**
+ * Snapshot API endpoints
+ */
+export const snapshotsApi = {
+    /**
+     * Get paginated list of snapshots
+     * @param {Object} params - Query parameters
+     * @param {number} params.page - Page number (default: 1)
+     * @param {number} params.page_size - Items per page (default: 10)
+     */
+    getList: async (params = {}) => {
+        const { page = 1, page_size = 10 } = params;
+        const response = await api.get('/snapshots/', { params: { page, page_size } });
+        return response.data;
+    },
+
+    /**
+     * Get a single snapshot with all its legs and current prices
+     * @param {number} snapshotId - Snapshot ID
+     */
+    getById: async (snapshotId) => {
+        const response = await api.get(`/snapshots/${snapshotId}/`);
+        return response.data;
+    },
+
+    /**
+     * Create a new snapshot with legs
+     * @param {Object} data - Snapshot data with legs array
+     */
+    create: async (data) => {
+        const response = await api.post('/snapshots/', data);
+        return response.data;
+    },
+
+    /**
+     * Update an existing snapshot
+     * @param {number} snapshotId - Snapshot ID
+     * @param {Object} data - Updated snapshot data with legs array
+     */
+    update: async (snapshotId, data) => {
+        const response = await api.put(`/snapshots/${snapshotId}/`, data);
+        return response.data;
+    },
+
+    /**
+     * Delete a snapshot and all its legs
+     * @param {number} snapshotId - Snapshot ID
+     */
+    delete: async (snapshotId) => {
+        const response = await api.delete(`/snapshots/${snapshotId}/`);
+        return response.data;
+    }
+};
+
 export default api;

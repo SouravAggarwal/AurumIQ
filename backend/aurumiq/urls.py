@@ -9,5 +9,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/analytics/', include('dashboard.urls')),
     path('api/trades/', include('trade.urls')),
+    path('api/snapshots/', include('snapshot.urls')),
     path('api/', include('brokers.urls')),
 ]

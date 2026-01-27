@@ -124,8 +124,11 @@ class FyersMasterClient:
             underlying_symbol__iexact=underlying_symbol
         ).order_by('expiry_epoch')
 
-        active_record = queryset.first()
-        return active_record.raw_data if active_record else {}
+        response = []
+        for instrument in queryset:
+            response.append(instrument.exchange_symbol)
+
+        return set(response)
 
     # ==================================================
     # Internal Helpers (Maintained for logic, but modified to use DB)

@@ -31,6 +31,7 @@ import {
     TrendingUp as TradesIcon,
     ChevronLeft as ChevronLeftIcon,
     Settings as SettingsIcon,
+    CameraAlt as SnapshotIcon,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 260;
@@ -39,6 +40,7 @@ const DRAWER_WIDTH_COLLAPSED = 72;
 const navigationItems = [
     { path: '/analysis', label: 'Analysis', icon: AnalyticsIcon },
     { path: '/trades', label: 'Trades', icon: TradesIcon },
+    { path: '/snapshots', label: 'Snapshots', icon: SnapshotIcon },
 ];
 
 function Layout({ children }) {
@@ -60,6 +62,9 @@ function Layout({ children }) {
     const isActive = (path) => {
         if (path === '/trades') {
             return location.pathname.startsWith('/trades');
+        }
+        if (path === '/snapshots') {
+            return location.pathname.startsWith('/snapshots');
         }
         return location.pathname === path;
     };
