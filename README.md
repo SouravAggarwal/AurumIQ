@@ -118,6 +118,31 @@ npm install
 npm run dev
 ```
 
+## 📝 Environment Variables
+
+### Backend (.env)
+Create a `.env` file in the `backend/` directory and configure the following:
+
+```env
+# Django Settings
+DJANGO_SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app,.onrender.com
+
+# Database Configuration
+USE_LOCAL_DB=True  # Set to False to use PostgreSQL
+DATABASE_URL='postgresql://your-db-url'
+
+# Broker Integration (Fyers)
+FYERS_CLIENT_ID=your_fyers_client_id
+FYERS_SECRET_KEY=your_fyers_secret_key
+FYERS_REDIRECT_URI=https://kite.zerodha.com/markets
+
+# Deployment/CORS
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+VITE_API_URL=http://127.0.0.1:8000
+```
+
 ## 🔒 Security Notes
 - **Environment Variables**: Use `.env` files for all sensitive credentials. Never commit `.env` to version control.
 - **Production Readiness**: Set `DEBUG=False` and use a strong `SECRET_KEY` in production.
